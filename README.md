@@ -10,7 +10,8 @@ The module consumes from the environment context the following variables:
 - __logger_webhook__: Enables on every finished request to send a notification to a `Slack Webhook`.
 
 Example using `python-dotenv`:
-```
+
+```python
 from dotenv import load_dotenv
 from utils.logger import get_logger
 import os
@@ -23,13 +24,14 @@ logger.serialize = bool(os.getenv('logger_serializing'))
 logger.webhook = str(os.getenv('logger_webhook'))
 ```
 
-stream_stdout fn
-----------------
+stream_stdout
+-------------
 
 Calling this function set up the log continuity to the standard output even when a logfile handler were configurated.
 
 Usage:
-```
+
+```python
 from utils.logger import stream_stdout
 
 # ... application context
@@ -37,8 +39,8 @@ from utils.logger import stream_stdout
 stream_stdout()
 ```
 
-get_logger fn
--------------
+get_logger
+----------
 
 This function configures and returns a `logging.Logger` object type with some extra `methods bounded to the instance ( not to the class )`.
 
@@ -58,7 +60,8 @@ Log every succesful or failed request with logger and Flask
 To enable this feature just import from flask object the `got_request_exception` and `request_finished`, when calling them, call the __request_finished__ and __request_error__ from logger instance and pass them as arguments within the Flask application.
 
 Example:
-```
+
+```python
 from flask import Flask got_request_exception, request_finished
 from utils.logger import get_logger
 
