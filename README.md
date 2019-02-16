@@ -76,3 +76,16 @@ got_request_exception.connect(logger.request_error,
 request_finished.connect(logger.request_finished, 
                          application)
 ```
+
+Chanelog
+--------
+
+- **Feb 06, 2019 - Removed** attributes setters for `logging.logger` instance type, values now taken from the function's arguments.
+- **Feb 06, 2019 - Added** new method `downgrade_logger` - sets the log level to error to the given logger.
+- Move and added new formats types:
+  + `msg-format`: basic, clean, extended.
+  + `time-format`: basic.
+- **Feb 06, 2019 - Removed**  `exception` function given that logging.logger already has an implementation of it.
+- **Feb 06, 2019 - Added** `log_and_notify_error` function.
+- **Feb 06, 2019 - Renamed** function `notify_webmaster` now is `log_and_notify_error`
+- **Feb 06, 2019 - Decoupled** values validation from logger attributes, like environment or webhook.
