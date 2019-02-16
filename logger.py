@@ -12,78 +12,78 @@ import inspect
 import requests
 
 
-LOG_LEVEL = logging.INFO
-LOG_FORMAT = '%(name)s:  %(levelname)-7s  %(message)s'
-LOG_MAXBYTES = 2000000
-LOG_BACKUPCOUNT = 10
-LOG_ENCODING = 'utf-8'
-TIME_FORMAT = '%a, %d %b %Y %H:%M:%S'
-ERROR = 'Error'
-WARNING = 'Warning'
+msg_formats = {
+    'clean': '%(message)s',
+    'basic': '[%(asctime)s] %(message)s',
+    "extended": '[%(asctime)s] %(name)s:%(levelname)s %(process)6d %(message)s'
+}
+
+time_formats = {
+    'basic': '%d/%b/%yT%H:%M:%S %Z'
+}
 
 
-def notify_webmaster(logger, message):
-    payload = {"text": message}
-
-    if logger.environment != "production":
-        payload["channel"] = "@noizee"
-
-    requests.post(logger.webhook + hook, json=payload)
+def get_time(time_format='%d-%b-%y %H:%M:%S (%Z)'):
+    return time.strftime(time_format)
 
 
-def get_time():
-    return time.strftime(TIME_FORMAT)
-
-
-def basepath(file):
-    return os.path.abspath(os.path.dirname(file))
+def basepath(file, sublevel=True):
+    _basepath = os.path.abspath(os.path.dirname(file))
+    if sublevel:
+        _basepath = os.path.join(_basepath, '..')
+    return _basepath
 
 
 def bound_method(obj, method):
     setattr(obj, method.__name__, method.__get__(obj))
 
 
-def serialized(logger, obj):
-    logger.info('data:pickle-serialized encode:base64:\n' +
-                base64.b64encode(pickle.dumps(obj)) + '\n')
+def serialize(obj, encode=False):
+    sobj = pickle.dumps(obj)
+    if encode:
+        sobj = base64.b64encode(sobj)
+    return sobj
 
 
 def get_module_name():
+    print(inspect.stack())
     frm = inspect.stack()[1]
     module = inspect.getmodule(frm[0])
     return module.__name__
 
 
 """
-    Exceptions ( Errors )
+    Notifications
 """
 
 
-def build_error_message(environment, level, module, error=None):
-    message = "*<!channel>*\n"
-    message += '[ *{}* ] *System {}* at *{}*.\n'.format(
-        environment, level, get_time()
-    )
+def send_webhook(message, webhook='http://127.0.0.1'):
+    payload = {'text': message}
+    requests.post(webhook, json=payload)
 
-    if bool(error):
-        message += '{} `{}` ocurred in `{}`.\n'.format(
-            level, error, module
-        )
 
-    message += 'Review the application logs for more info.'
+def build_error_message(error, level, module):
+    message = '*<!channel>* *System {}!*.\n'.format(
+        level, module)
+    message += '`{}` ocurred in `{}`.\n'.format(error, module)
+    message += 'At *{}*' % get_time()
     return message
 
 
-def exception(logger):
-    logger.error(traceback.format_exc())
+def log_and_notify_error(logger, error=None):
+    module = get_module_name()
+    level = "Error"
 
+    if error:
+        logger.error('Exception has ocurred: %s' % module)
+        logger.error(traceback.format_exc())
+    else:
+        logger.warning('Exception has ocurred: %s' % module)
+        logger.warning(traceback.format_exc())
+        level = "Warning"
 
-def exception_warn(logger, module):
-    logger.warning('Exception has ocurred but current op continues: %s' % module)
-    logger.warning(traceback.format_exc())
-
-    message = build_error_message(logger.environment, WARNING, module)
-    logger.notify_webmaster(message)
+    message = build_error_message(error, level, module)
+    send_webhook(message, logger.webhook)
 
 
 """
@@ -91,30 +91,24 @@ def exception_warn(logger, module):
 """
 
 
-def request_finished(logger, sender, response, **extra):
-    logger.info(get_time())
-
-    logger.info('Request finished with: "%s" status code.' % (
-        str(response.status_code)
+def request_finished(logger, sender, **kwargs):
+    response = kwargs["response"]
+    logger.info('Request %s %s ( %s ) endpoint=%s;' % (
+        str(request.method),
+        str(request.path),
+        str(request.query_string or None),
+        str(request.endpoint)
     ))
-
-    logger.info('Response data parsed in: "%s"' % request.endpoint)
-    logger.info('Data object type: "%s"' % type(response.response))
-
-    if bool(logger.serialize):
-        logger.serialized(response.response)
+    logger.info('Response %s %s; length=%sb' % (
+        str(response.status),
+        str(response.content_type),
+        str(response.content_length)
+    ))
 
 
 def request_error(logger, sender, exception, **extra):
-    logger.error('System failure at %s.' % get_time())
-    logger.error('Error ocurred in %s' % request.endpoint)
-    logger.exception()
-
-    message = build_error_message(
-        logger.environment, ERROR, request.endpoint, exception
-    )
-
-    logger.notify_webmaster(message)
+    logger.exception('Error ocurred in %s' % request.endpoint)
+    log_and_notify_error(logger, error=exception)
 
 
 """
@@ -122,41 +116,66 @@ def request_error(logger, sender, exception, **extra):
 """
 
 
-def stream_stdout():
+def logpath(path, name):
+    return os.path.join(path, 'log/%s.log' % name)
+
+
+def stream_stdout(log_level=logging.INFO,
+                  msg_format='extended',
+                  time_format='basic'):
+    """ Stream to the standard output """
     ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(LOG_LEVEL)
-    ch.setFormatter(logging.Formatter(LOG_FORMAT))
+    ch.setLevel(log_level)
+    ch.setFormatter(logging.Formatter(
+        msg_formats[msg_format],
+        time_formats[time_format]
+    ))
 
     root = logging.getLogger()
-    root.setLevel(LOG_LEVEL)
+    root.setLevel(log_level)
     root.addHandler(ch)
 
 
-def get_logger(module):
-    """Return a logger objject type for the given module name"""
-    file_path = os.path.dirname(__file__)
-    file_path = os.path.join(file_path, '..', 'log/%s.log' % module)
+def get_logger(module,
+               log_level=logging.INFO,
+               msg_format='extended',
+               max_bytes=2000000,
+               backup_count=10,
+               encoding='utf-8',
+               time_format='basic'):
+    """
+        Return a logger objject type for the given module name
+    """
+    log_path = logpath(basepath(__file__), module)
+
+    log_formatter = logging.Formatter(
+        msg_formats[msg_format],
+        time_formats[time_format]
+    )
 
     handler = RotatingFileHandler(
-        filename=file_path,
-        maxBytes=LOG_MAXBYTES,
-        backupCount=LOG_BACKUPCOUNT,
-        encoding=LOG_ENCODING)
-    handler.setLevel(LOG_LEVEL)
-    handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        filename=log_path,
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+        encoding=encoding
+    )
+
+    handler.setLevel(log_level)
+    handler.setFormatter(log_formatter)
 
     logger = logging.getLogger(module)
     logger.addHandler(handler)
 
-    setattr(logger, 'serialize', 0)
-    setattr(logger, "environment", "localhost")
-    setattr(logger, "webhook", "http://127.0.0.1")
+    setattr(logger, 'environment', 'localhost')
 
-    bound_method(logger, serialized)
-    bound_method(logger, exception)
-    bound_method(logger, request_finished)
+    bound_method(logger, serialize)
     bound_method(logger, request_error)
-    bound_method(logger, exception_warn)
-    bound_method(logger, notify_webmaster)
+    bound_method(logger, request_finished)
+    bound_method(logger, log_and_notify_error)
 
     return logger
+
+
+def downgrade_logger(logname):
+    logger = logging.getLogger(logname)
+    logger.level = logging.ERROR
