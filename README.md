@@ -37,9 +37,9 @@ logger.error("This is an error msg")
 produces:
 
 ```
-[16/feb/19T13:12:40 CST] log-name:INFO    62346 This is an info msg
-[16/feb/19T13:12:40 CST] log-name:WARNING 62346 This is a warning msg
-[16/feb/19T13:12:40 CST] log-name:ERROR   62346 This is an error msg
+2019-Feb-20 23:04:39, +0000 - This is an info msg - INFO -
+2019-Feb-20 23:04:39, +0000 - This is a warning msg - WARNING -
+2019-Feb-20 23:04:39, +0000 - This is an info msg - ERROR -
 ```
 
 Logging every request with logger and Flask
@@ -60,16 +60,43 @@ logger = get_logger("your-log-name")
 
 got_request_exception.connect(
   logger.request_error, application)
+ 
 
 request_finished.connect(
   logger.request_finished, application)
 ```
 
-Produces:
+`request_finished` produces:
 
 ```
-[16/feb/19T13:12:40 CST] ecommerce-api:INFO  62346 Request GET /api/access-point ( key=val&key=val ) endpoint=api.method;
-[16/feb/19T13:12:40 CST] ecommerce-api:INFO  62346 Response 200 OK text/html; charset=utf-8; length=1098b
+21/Feb/19T12:19:09 CST - ecommerce-api - INFO -
+----API Request---------------------------------------
+Type: POST /api/auth/signin/anon
+QueryString: None
+Endpoint: api.anon
+Payload Body: None
+Response 200 OK application/json; length=42b
+-------------------------------------------------------
+```
+
+`request_error` produces:
+
+```
+21/Feb/19T09:29:48 CST - ecommerce-error - ERROR -
+----Request Error---------------------------------------------------------------------------------------
+Type: GET /api/cart/5c6ebccbb2b85137f50789f1
+QueryString: None
+Endpoint: api.cart
+Payload Body: None
+Traceback (most recent call last):
+  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask_restful/__init__.py", line 267, in error_router
+    return self.handle_error(e)
+  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask/app.py", line 1817, in wsgi_app
+    response = self.full_dispatch_request()
+ ...
+  File "/opt/python/run/venv/local/lib64/python2.7/site-packages/simplejson/decoder.py", line 400, in raw_decode
+    return self.scan_once(s, idx=_w(s, idx).end())
+JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 ```
 
 Chanelog
