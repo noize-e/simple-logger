@@ -10,7 +10,7 @@ Calling this function set up the log continuity to the standard output even when
 
 Usage:
 
-```python
+```py
 from utils.logger import stream_stdout
 
 # ... application context
@@ -23,7 +23,7 @@ get_logger
 
 This function configures a `logging.Logger` object type with extra __methods bounded to the object instance__. The logger use the `logging.RotatingFileHandler` handler which when the log reach  a pre-defined size it close the log, renames it and opens a new one,  it comes with a default __backup count of 10 each log with a maxium size of 20M__. Each log is __UTF-8__ encoded
 
-```python
+```py
 from utils.logger import get_logger
 
 # ... application context
@@ -36,7 +36,7 @@ logger.error("This is an error msg")
 
 produces:
 
-```
+```console
 2019-Feb-20 23:04:39, +0000 - This is an info msg - INFO -
 2019-Feb-20 23:04:39, +0000 - This is a warning msg - WARNING -
 2019-Feb-20 23:04:39, +0000 - This is an info msg - ERROR -
@@ -49,7 +49,7 @@ Import from `flask` module the `got_request_exception` and `request_finished` an
 
 Example:
 
-```python
+```py
 from flask import Flask, got_request_exception, request_finished
 from utils.logger import get_logger
 
@@ -68,7 +68,7 @@ request_finished.connect(
 
 `request_finished` produces:
 
-```
+```console
 21/Feb/19T12:19:09 CST - ecommerce-api - INFO -
 ----API Request---------------------------------------
 Type: POST /api/auth/signin/anon
@@ -81,7 +81,7 @@ Response 200 OK application/json; length=42b
 
 `request_error` produces:
 
-```
+```console
 21/Feb/19T09:29:48 CST - ecommerce-error - ERROR -
 ----Request Error---------------------------------------------------------------------------------------
 Type: GET /api/cart/5c6ebccbb2b85137f50789f1
