@@ -14,30 +14,21 @@ Required:
 
 [Python2 => 2.7](https://www.python.org/)
 
-stream_stdout
--------------
+Logging
+-------
 
-Calling this function set up the log continuity to the standard output even when a logfile handler were configurated.
+Import the `get_logger` method from `logger.py` and set a name for the logfile and start logging.
 
-Usage:
+The logger has the following settings by default:
 
-```python
-from utils.logger import stream_stdout
+- Encode: __UTF-8__
+- File Handler: __logging.RotatingFileHandler__
+- Max file size: __20M__
+- Backup count: __10__
 
-# ... application context
-
-stream_stdout()
-```
-
-get_logger
-----------
-
-This function configures a `logging.Logger` object type with extra __methods bounded to the object instance__. The logger use the `logging.RotatingFileHandler` handler which when the log reach  a pre-defined size it close the log, renames it and opens a new one,  it comes with a default __backup count of 10 each log with a maxium size of 20M__. Each log is __UTF-8__ encoded
 
 ```py
-from utils.logger import get_logger
-
-# ... application context
+from logger import get_logger
 
 logger = get_logger("log-name")
 logger.info("This is an info msg")
@@ -45,18 +36,10 @@ logger.warning("This is a warning msg")
 logger.error("This is an error msg")
 ```
 
-produces:
+Logger & Flask
+--------------
 
-```console
-2019-Feb-20 23:04:39, +0000 - This is an info msg - INFO -
-2019-Feb-20 23:04:39, +0000 - This is a warning msg - WARNING -
-2019-Feb-20 23:04:39, +0000 - This is an info msg - ERROR -
-```
-
-Logging every request with logger and Flask
--------------------------------------------
-
-Import from `flask` module the `got_request_exception` and `request_finished` and pass as first argument the methods __request_finished__ and __request_error__.
+Import from `flask` package `got_request_exception & request_finished` methods and setup to use logger's `request_finished & request_error` ones
 
 Example:
 
@@ -64,47 +47,47 @@ Example:
 from flask import Flask, got_request_exception, request_finished
 from utils.logger import get_logger
 
-application = Flask("app-name")
-logger = get_logger("your-log-name")
+app = Flask(__name__)
+logger = get_logger("my-logger", environment="localhost")
+
+got_request_exception.connect(logger.request_error, app)
+request_finished.connect(logger.request_finished, app)
 ```
+
+###### Request format example
+```console
+08-Mar-19 15:44:19 (CST)
+=========================================== API Request ============================================
+Path: /api/payment/5b4fcf2d
+Method: PUT
+QueryString: None
+Endpoint: api.paymentmethod
+Payload Body:
+
+{u'function': u'payment', u'value': u'card'}
+
+08-Mar-19 15:44:19 (CST)
+--------------------------------------------- Response ---------------------------------------------
+Status: 200 OK
+ContentType: application/json
+ContentLength: 120
+'{\n"status": "Ok",\n  "success": "Payment method has been saved"\n}'
+=============================================== END ================================================
+```
+
+Stdout streamming
+-----------------
+
+Import and call `stream_stdout()` function
+
+Usage:
 
 ```python
-got_request_exception.connect(logger.request_error, application)
-request_finished.connect(logger.request_finished, application)
+from utils.logger import stream_stdout
+
+stream_stdout()
 ```
 
-`request_finished` produces:
-
-```console
-21/Feb/19T12:19:09 CST - ecommerce-api - INFO -
-----API Request---------------------------------------
-Type: POST /api/auth/signin/anon
-QueryString: None
-Endpoint: api.anon
-Payload Body: None
-Response 200 OK application/json; length=42b
--------------------------------------------------------
-```
-
-`request_error` produces:
-
-```console
-21/Feb/19T09:29:48 CST - ecommerce-error - ERROR -
-----Request Error---------------------------------------------------------------------------------------
-Type: GET /api/cart/5c6ebccbb2b85137f50789f1
-QueryString: None
-Endpoint: api.cart
-Payload Body: None
-Traceback (most recent call last):
-  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask_restful/__init__.py", line 267, in error_router
-    return self.handle_error(e)
-  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask/app.py", line 1817, in wsgi_app
-    response = self.full_dispatch_request()
- ...
-  File "/opt/python/run/venv/local/lib64/python2.7/site-packages/simplejson/decoder.py", line 400, in raw_decode
-    return self.scan_once(s, idx=_w(s, idx).end())
-JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-```
 
 Chanelog
 --------
