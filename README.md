@@ -1,7 +1,18 @@
-simple logger
-=============
+```                 _                             
+ _ __ ___  _   _| | ___   __ _  __ _  ___ _ __ 
+| '_ ` _ \| | | | |/ _ \ / _` |/ _` |/ _ | '__|
+| | | | | | |_| | | (_) | (_| | (_| |  __| |   
+|_| |_| |_|\__, |_|\___/ \__, |\__, |\___|_|   
+           |___/         |___/ |___/      v0.9.1
+```
 
-This module adds configures the pre-built `logging` module from a basic logger configuration to add some extra functionality like after log send a notification.
+This is a quick introduction to simplogger, as the time allows me to update the documentation, i will try to be more detailed in each setting of the module.
+
+Simplogger defines functions to perform logging using the pre-built python `logging` module but saving us the configuration of each logger.
+
+Required:
+
+[Python2 => 2.7](https://www.python.org/)
 
 stream_stdout
 -------------
@@ -10,7 +21,7 @@ Calling this function set up the log continuity to the standard output even when
 
 Usage:
 
-```py
+```python
 from utils.logger import stream_stdout
 
 # ... application context
@@ -49,21 +60,17 @@ Import from `flask` module the `got_request_exception` and `request_finished` an
 
 Example:
 
-```py
+```python
 from flask import Flask, got_request_exception, request_finished
 from utils.logger import get_logger
 
 application = Flask("app-name")
 logger = get_logger("your-log-name")
+```
 
-...
-
-got_request_exception.connect(
-  logger.request_error, application)
- 
-
-request_finished.connect(
-  logger.request_finished, application)
+```python
+got_request_exception.connect(logger.request_error, application)
+request_finished.connect(logger.request_finished, application)
 ```
 
 `request_finished` produces:
