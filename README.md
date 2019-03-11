@@ -6,21 +6,21 @@
            |___/         |___/ |___/      v0.9.1
 ```
 
+On my days as Technica
 This is a quick introduction to simplogger, as the time allows me to update the documentation, i will try to be more detailed in each setting of the module.
 
 Simplogger defines functions to perform logging using the pre-built python `logging` module but saving us the configuration of each logger.
 
-Required:
-
-[Python2 => 2.7](https://www.python.org/)
-
 Logging
 -------
 
-Import the `get_logger` method from `logger.py` and set a name for the logfile and start logging.
+Import `logger.get_logger` method, set a name for the logfile and call any method that the logging.Logger object cames within, like `info`, `warning`, etc. 
+
+> It's important to recall that, given the log level set up in the `logger` object, it would set the method type to use for logging.
 
 The logger has the following settings by default:
 
+- Log Level: __logging.INFO__
 - Encode: __UTF-8__
 - File Handler: __logging.RotatingFileHandler__
 - Max file size: __20M__
@@ -75,6 +75,36 @@ ContentLength: 120
 =============================================== END ================================================
 ```
 
+###### Exception format example
+```console
+08-Mar-19 16:49:04 (CST)
+**************************************** ERROR Api Request *****************************************
+Path: /api/shipping/5c82f160b2b8512ac36fbcb0/type-shipping
+Method: PUT
+QueryString: None
+Endpoint: api.shippingtyperesource
+Payload Body:
+
+{u'function': u'updateShippingType', u'type_shipping': u'e', u'retailer_id': u'5a6657e7aa191d2113b829f0'}
+
+****************************************************************************************************,
+Exception has ocurred: api.shippingtyperesource
+Traceback (most recent call last):
+  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask/app.py", line 1475, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask/app.py", line 1461, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask_restful/__init__.py", line 471, in wrapper
+    resp = resource(*args, **kwargs)
+  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask/views.py", line 84, in view
+    return self.dispatch_request(*args, **kwargs)
+  File "/opt/python/run/venv/local/lib/python2.7/site-packages/flask_restful/__init__.py", line 581, in dispatch_request
+    resp = meth(*args, **kwargs)
+  File "/opt/python/current/app/ecommerce/resources/ShippingResource.py", line 379, in put
+    shipping_container = cart_model.shippings
+AttributeError: 'NoneType' object has no attribute 'shippings'
+```
+
 Stdout streamming
 -----------------
 
@@ -88,6 +118,10 @@ from utils.logger import stream_stdout
 stream_stdout()
 ```
 
+Caveats
+-------
+
+It has been only tested with [Python2 => 2.7](https://www.python.org/).
 
 Chanelog
 --------
